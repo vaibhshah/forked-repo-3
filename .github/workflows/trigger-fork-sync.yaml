@@ -10,7 +10,7 @@ on:
 
 jobs:
   Trigger-Fork-Sync:
-    uses: vaibhhvv/common-actions-repo/.github/workflows/trigger-fork-sync-template.yaml@main
+    uses: vaibhhvv/common-actions/.github/workflows/trigger-fork-sync-template.yaml@main
     with:
       forked_repo: vaibhhvv/forked-repo-1
     secrets:
