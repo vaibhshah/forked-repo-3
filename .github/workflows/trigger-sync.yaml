@@ -6,7 +6,7 @@ on:
       - master  # or 'develop' if you're doing this in original-repo-2
 
 jobs:
-  dispatch:
+  Trigger-Fork-Sync:
     runs-on: ubuntu-latest
 
     steps:
