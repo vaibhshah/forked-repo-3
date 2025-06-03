@@ -1,0 +1,17 @@
+name: Trigger Fork Sync
+
+on:
+  push:
+    branches:
+      - master      # or 'develop' if you're doing this in original-repo-2
+    # Ignore changes ONLY inside the .github/workflows folder
+    paths-ignore:
+      - '.github/workflows/**'
+
+jobs:
+  Trigger-Fork-Sync:
+    uses: vaibhhvv/common-actions-repo/.github/workflows/trigger-fork-sync-template.yaml@main
+    with:
+      forked_repo: vaibhhvv/forked-repo-1
+    secrets:
+      token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
