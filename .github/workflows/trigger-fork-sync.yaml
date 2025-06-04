@@ -12,7 +12,7 @@ jobs:
   Trigger-Fork-Sync:
     uses: vaibhhvv/common-actions/.github/workflows/trigger-fork-sync-template.yaml@main
     with:
-      forked_repo: vaibhhvv/forked-repo-1
+      forked_repo: pritul95/forked-repo-test
       event_type: Trigger-Fork-Sync
     secrets:
       token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
