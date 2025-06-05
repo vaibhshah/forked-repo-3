@@ -15,45 +15,59 @@ jobs:
       BRANCH: master
 
     steps:
+      - name: Checkout original repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.ORIGINAL_REPO }}
+          ref: ${{ env.BRANCH }}
+          path: upstream-repo
+          fetch-depth: 0
+
       - name: Clone forked repo
         run: |
-          git clone https://x-access-token:${{ secrets.PAT }}@github.com/${FORKED_REPO}.git fork-repo
+          git clone https://x-access-token:${{ secrets.PAT }}@github.com/${{ env.FORKED_REPO }} fork-repo
           cd fork-repo
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Sync from upstream
+      - name: Sync fork with upstream (preserving workflows)
         run: |
           cd fork-repo
 
-          # Backup forked workflows
-          mkdir -p ../fork-workflows
-          cp -r .github/workflows ../fork-workflows || true
+          # Add upstream remote and fetch
+          git remote add upstream https://github.com/${{ env.ORIGINAL_REPO }}.git
+          git fetch upstream ${{ env.BRANCH }}
 
-          # Add upstream and fetch
-          git remote add upstream https://github.com/${ORIGINAL_REPO}.git
-          git fetch upstream
+          # Checkout a fresh sync branch from fork branch
+          git checkout -B sync-fork origin/${{ env.BRANCH }}
 
-          # Create sync branch from upstream/master
-          git checkout -B sync-fork upstream/${BRANCH}
+          # Save the current fork workflows (folder)
+          git checkout origin/${{ env.BRANCH }} -- .github/workflows
 
-          # Restore forked workflows
-          rm -rf .github/workflows
-          cp -r ../fork-workflows .github/workflows || true
+          # Reset hard to upstream branch
+          git reset --hard upstream/${{ env.BRANCH }}
 
-          # Stage and check for changes
+          # Restore the fork workflows saved before
+          git checkout sync-fork -- .github/workflows
+
+          # Add changes excluding workflows
           git add .
-          git diff --cached --quiet && echo "No changes to sync" && exit 0
 
-          git commit -m "🔄 Sync from upstream $ORIGINAL_REPO:$BRANCH"
+          # Check if there are any changes to commit
+          if git diff --cached --quiet; then
+            echo "No changes to sync"
+            exit 0
+          fi
+
+          git commit -m "🔄 Sync fork with upstream (excluding workflows)"
           git push -f origin sync-fork
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.PAT }}
-          commit-message: "🔄 Sync from upstream"
-          title: "🔄 Sync from upstream"
+          commit-message: "🔄 Sync fork with upstream"
+          title: "🔄 Sync fork with upstream"
           body: |
             Auto-generated PR to sync with upstream `${{ env.ORIGINAL_REPO }}`
           base: ${{ env.BRANCH }}
