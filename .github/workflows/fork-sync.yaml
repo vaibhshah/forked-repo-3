@@ -1,0 +1,60 @@
+name: Sync Forked Repo
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  sync-fork:
+    runs-on: ubuntu-latest
+
+    env:
+      ORIGINAL_REPO: vaibhhvv/original-repo-3
+      FORKED_REPO: vaibhshah/forked-repo-3
+      BRANCH: master
+
+    steps:
+      - name: Checkout original repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clone forked repo
+        run: |
+          git clone https://x-access-token:${{ secrets.PAT }}@github.com/$FORKED_REPO fork-repo
+          cd fork-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync from original repo
+        run: |
+          cd fork-repo
+          git remote add upstream https://github.com/${ORIGINAL_REPO}.git
+          git fetch upstream $BRANCH
+
+          git checkout -B sync-fork upstream/$BRANCH
+
+          # Reset to upstream/master but preserve workflows from fork
+          git checkout $BRANCH -- .github/workflows || true  # save fork workflows
+          git reset --hard upstream/$BRANCH
+          git checkout sync-fork -- .github/workflows || true  # restore fork workflows
+          git checkout -B sync-fork
+
+          # Check for differences (excluding workflows)
+          git add .
+          git diff --cached --quiet && echo "No changes to sync" && exit 0
+
+          git commit -m "🔄 Sync from upstream $ORIGINAL_REPO:$BRANCH"
+          git push -f origin sync-fork
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.PAT }}
+          commit-message: "🔄 Sync from upstream"
+          title: "🔄 Sync from upstream"
+          body: |
+            Auto-generated PR to sync with upstream `${{ env.ORIGINAL_REPO }}`
+          base: ${{ env.BRANCH }}
+          branch: sync-fork
