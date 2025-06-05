@@ -34,14 +34,14 @@ jobs:
         run: |
           cd fork-repo
 
-          # Add upstream remote and fetch
+          # Add upstream remote and fetch upstream branch
           git remote add upstream https://github.com/${{ env.ORIGINAL_REPO }}.git
           git fetch upstream ${{ env.BRANCH }}
 
           # Checkout a fresh sync branch from fork branch
           git checkout -B sync-fork origin/${{ env.BRANCH }}
 
-          # Save the current fork workflows (folder)
+          # Save the current fork workflows folder (from fork branch)
           git checkout origin/${{ env.BRANCH }} -- .github/workflows
 
           # Reset hard to upstream branch
@@ -50,10 +50,10 @@ jobs:
           # Restore the fork workflows saved before
           git checkout sync-fork -- .github/workflows
 
-          # Add changes excluding workflows
+          # Stage all changes (except workflows are restored from fork)
           git add .
 
-          # Check if there are any changes to commit
+          # Check if there are changes to commit
           if git diff --cached --quiet; then
             echo "No changes to sync"
             exit 0
