@@ -15,14 +15,6 @@ jobs:
       BRANCH: master
 
     steps:
-      - name: Checkout original repo
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ env.ORIGINAL_REPO }}
-          ref: ${{ env.BRANCH }}
-          path: upstream-repo
-          fetch-depth: 0
-
       - name: Clone forked repo
         run: |
           git clone https://x-access-token:${{ secrets.PAT }}@github.com/${FORKED_REPO}.git fork-repo
@@ -32,24 +24,24 @@ jobs:
 
       - name: Sync from upstream
         run: |
-          # Move into forked repo
           cd fork-repo
 
-          # Save fork workflows
+          # Backup forked workflows
           mkdir -p ../fork-workflows
           cp -r .github/workflows ../fork-workflows || true
 
           # Add upstream and fetch
-          git remote add upstream ../../upstream-repo
+          git remote add upstream https://github.com/${ORIGINAL_REPO}.git
           git fetch upstream
-          
-          # Create new sync branch from upstream/master
+
+          # Create sync branch from upstream/master
           git checkout -B sync-fork upstream/${BRANCH}
 
-          # Restore workflows from fork
+          # Restore forked workflows
           rm -rf .github/workflows
           cp -r ../fork-workflows .github/workflows || true
 
+          # Stage and check for changes
           git add .
           git diff --cached --quiet && echo "No changes to sync" && exit 0
 
