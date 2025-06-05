@@ -18,30 +18,38 @@ jobs:
       - name: Checkout original repo
         uses: actions/checkout@v4
         with:
+          repository: ${{ env.ORIGINAL_REPO }}
+          ref: ${{ env.BRANCH }}
+          path: upstream-repo
           fetch-depth: 0
 
       - name: Clone forked repo
         run: |
-          git clone https://x-access-token:${{ secrets.PAT }}@github.com/$FORKED_REPO fork-repo
+          git clone https://x-access-token:${{ secrets.PAT }}@github.com/${FORKED_REPO}.git fork-repo
           cd fork-repo
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Sync from original repo
+      - name: Sync from upstream
         run: |
+          # Move into forked repo
           cd fork-repo
-          git remote add upstream https://github.com/${ORIGINAL_REPO}.git
-          git fetch upstream $BRANCH
 
-          git checkout -B sync-fork upstream/$BRANCH
+          # Save fork workflows
+          mkdir -p ../fork-workflows
+          cp -r .github/workflows ../fork-workflows || true
 
-          # Reset to upstream/master but preserve workflows from fork
-          git checkout $BRANCH -- .github/workflows || true  # save fork workflows
-          git reset --hard upstream/$BRANCH
-          git checkout sync-fork -- .github/workflows || true  # restore fork workflows
-          git checkout -B sync-fork
+          # Add upstream and fetch
+          git remote add upstream ../../upstream-repo
+          git fetch upstream
+          
+          # Create new sync branch from upstream/master
+          git checkout -B sync-fork upstream/${BRANCH}
 
-          # Check for differences (excluding workflows)
+          # Restore workflows from fork
+          rm -rf .github/workflows
+          cp -r ../fork-workflows .github/workflows || true
+
           git add .
           git diff --cached --quiet && echo "No changes to sync" && exit 0
 
