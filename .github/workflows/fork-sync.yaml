@@ -1,0 +1,18 @@
+name: Trigger Fork Sync
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send repository_dispatch to forked repo
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.PAT }}
+          repository: vaibhshah/forked-repo-3
+          event-type: sync-from-upstream
+          client-payload: '{"source_repo":"vaibhhvv/original-repo-3","source_branch":"master"}'
