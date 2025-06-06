@@ -53,8 +53,8 @@ jobs:
         GH_TOKEN: ${{ secrets.PAT }}
       run: |
         # Ensure branch exists
-        git fetch origin feat-sync
-        git checkout feat-sync
+        git fetch origin
+        git checkout -B feat-sync origin/feat-sync
     
         # Check if PR already exists
         if gh pr list --head feat-sync --base master --json number --jq '.[0].number' | grep -q '[0-9]'; then
