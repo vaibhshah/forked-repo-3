@@ -9,6 +9,7 @@ permissions:
 
 env:
   UPSTREAM_REPO: vaibhhvv/original-repo-3
+  SOURCE_BRANCH: master
   FORK_BRANCH: master
   SYNC_BRANCH: sync-upstream-branch
 
@@ -17,13 +18,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout fork default branch
+      - name: Checkout fork branch
         uses: actions/checkout@v3
         with:
           ref: ${{ env.FORK_BRANCH }}
           token: ${{ secrets.PAT }}
 
-      - name: Configure git identity
+      - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -33,50 +34,44 @@ jobs:
           git remote add upstream https://github.com/${{ env.UPSTREAM_REPO }}.git
           git fetch upstream
 
-      - name: Create sync branch from fork/master
+      - name: Create sync branch from fork
         run: |
           git checkout -B $SYNC_BRANCH origin/${{ env.FORK_BRANCH }}
 
-      - name: Sync all files except .github/workflows
+      - name: Save fork workflows and merge upstream
         run: |
-          # Temporarily move workflows away
-          mv .github/workflows ../preserve-workflows
+          cp -r .github/workflows ../preserve-workflows
 
-          # Checkout everything from upstream/master into current working tree
-          git checkout upstream/master -- .
+          git merge upstream/${{ env.SOURCE_BRANCH }} --no-edit || true
 
-          # Restore our fork's workflows
           rm -rf .github/workflows
           mv ../preserve-workflows .github/workflows
 
-          # Stage all changes
           git add .
 
-          # Check for changes before committing
           if git diff --cached --quiet; then
-            echo "No changes to commit."
+            echo "No changes to commit"
             echo "changes=false" >> $GITHUB_ENV
           else
             echo "changes=true" >> $GITHUB_ENV
           fi
 
-      - name: Commit and push if changes
+      - name: Commit and push sync branch
         if: env.changes == 'true'
         run: |
-          git commit -m "🔄 Sync fork with upstream, preserving fork workflows 🤖"
+          git commit -m "🔄 Sync fork with upstream, preserving workflows 🤖"
           git push -u origin $SYNC_BRANCH --force
 
-      - name: Create PR
+      - name: Create Pull Request
         if: env.changes == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.PAT }}
-          commit-message: "🔄 Sync fork with upstream, preserving fork workflows 🤖"
+          commit-message: "🔄 Sync fork with upstream, preserving workflows 🤖"
           title: "Sync fork with upstream"
           body: |
-            This PR brings your fork in sync with `${{ env.UPSTREAM_REPO }}` `master`.
-            Your `.github/workflows/` folder is preserved from the fork.
+            This PR syncs your fork with upstream `${{ env.UPSTREAM_REPO }}` (`${{ env.SOURCE_BRANCH }}`),
+            preserving your local `.github/workflows/` directory.
           branch: ${{ env.SYNC_BRANCH }}
           base: ${{ env.FORK_BRANCH }}
-          draft: false
-          delete-branch: false
+          delete-branch: true
