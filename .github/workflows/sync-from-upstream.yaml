@@ -1,0 +1,66 @@
+name: Sync from Upstream
+
+on:
+  repository_dispatch:
+    types: [sync-from-upstream]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout forked repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          path: fork
+
+      - name: Set up variables
+        id: vars
+        run: |
+          echo "SOURCE_REPO=${{ github.event.client_payload.source_repo }}" >> $GITHUB_ENV
+          echo "SOURCE_BRANCH=${{ github.event.client_payload.source_branch }}" >> $GITHUB_ENV
+
+      - name: Add upstream & fetch
+        working-directory: fork
+        run: |
+          git remote add upstream https://github.com/${SOURCE_REPO}.git
+          git fetch upstream $SOURCE_BRANCH
+
+      - name: Backup workflows
+        working-directory: fork
+        run: |
+          mkdir ../workflows-backup
+          cp -r .github/workflows ../workflows-backup || true
+
+      - name: Hard reset to upstream
+        working-directory: fork
+        run: |
+          git checkout -B sync-fork upstream/$SOURCE_BRANCH
+          rm -rf .github/workflows
+          cp -r ../../workflows-backup .github/workflows || true
+
+      - name: Commit if changes exist
+        working-directory: fork
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          if git diff --cached --quiet; then
+            echo "No changes to sync"
+            exit 0
+          fi
+          git commit -m "🔄 Sync from upstream excluding workflows"
+          git push -f origin sync-fork
+
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.PAT }}
+          commit-message: "🔄 Sync from upstream"
+          title: "🔄 Sync from upstream"
+          body: |
+            Auto-generated PR to sync with upstream `${{ env.SOURCE_REPO }}`
+            ➤ Preserved fork's workflows.
+          base: master
+          branch: sync-fork
