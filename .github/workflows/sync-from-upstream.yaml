@@ -24,12 +24,22 @@ jobs:
         sync_tags: ""
         github_token: ${{ secrets.PAT }}
 
-    - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v5
-      with:
-        token: ${{ secrets.PAT }}
-        title: "Sync fork with upstream"
-        body: "This PR syncs upstream changes from `master` to `feat-sync`."
-        base: master
-        branch: feat-sync
+    - name: Create PR to merge upstream into fork
+      env:
+        GH_TOKEN: ${{ secrets.PAT }}
+      run: |
+        # Ensure branch exists
+        git fetch origin feat-sync
+        git checkout feat-sync
+    
+        # Check if PR already exists
+        if gh pr list --head feat-sync --base master --json number --jq '.[0].number' | grep -q '[0-9]'; then
+          echo "PR already exists, skipping."
+        else
+          gh pr create \
+            --title "🔄 Sync fork with upstream" \
+            --body "This PR syncs the \`feat-sync\` branch with upstream \`master\`, preserving local workflows." \
+            --base master \
+            --head feat-sync
+        fi
 
