@@ -22,11 +22,13 @@ jobs:
         sync_tags: ""
         github_token: ${{ secrets.PAT }}
 
-    - name: Revert upstream .github/workflows changes
+    - name: Revert upstream .github/workflows changes from fork's master
       run: |
         git fetch origin master
+        git checkout feat-sync
         git checkout origin/master -- .github/workflows
-        git restore --staged .github/workflows || true
+        git add .github/workflows
+        git commit -m "Preserve fork's .github/workflows/" || echo "No changes to workflows"
 
     - name: Create PR to merge upstream into fork
       env:
