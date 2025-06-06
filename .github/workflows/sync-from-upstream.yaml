@@ -27,16 +27,18 @@ jobs:
         git config user.name "Sync Bot"
         git config user.email "bot@example.com"
 
-        # Make sure we're on feat-sync branch
         git checkout feat-sync
 
-        # Fetch the original fork branch where workflows are trusted
+        # Fetch origin/master as the trusted copy of fork
         git fetch origin master:origin-master
 
-        # Overwrite .github/workflows from fork's master (not upstream!)
-        git checkout origin-master -- .github/workflows || true
+        # Fully reset the workflows directory
+        rm -rf .github/workflows
 
-        # Check if anything changed
+        # Restore from fork’s trusted master
+        git checkout origin-master -- .github/workflows
+
+        # Check if anything actually changed (now it *will*)
         if git diff --quiet .github/workflows; then
           echo "No workflow changes to commit."
         else
@@ -44,6 +46,7 @@ jobs:
           git commit -m "🔧 Restore fork's workflows after upstream sync"
           git push origin feat-sync
         fi
+
 
     - name: Create PR to merge upstream into fork
       env:
