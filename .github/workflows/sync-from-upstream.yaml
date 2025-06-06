@@ -1,8 +1,8 @@
-name: Sync from upstream
+name: Sync Forked Repo
 
 on:
   repository_dispatch:
-    types: [sync-upstream]
+    types: [sync-fork]
 
 jobs:
   sync:
@@ -10,49 +10,49 @@ jobs:
 
     env:
       SOURCE_REPO: vaibhhvv/original-repo-3
-      SOURCE_BRANCH: master
-      TARGET_BRANCH: master
+      FORK_REPO: vaibhshah/forked-repo-3
+      BRANCH: master
 
     steps:
-      # Checkout fork repo (this repo)
-      - name: Checkout fork
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # important to preserve history
-
-      - name: Add upstream and fetch
+      - name: Clone forked repo
         run: |
-          git remote add upstream https://github.com/${{ env.SOURCE_REPO }}.git
-          git fetch upstream ${{ env.SOURCE_BRANCH }}
+          git clone https://x-access-token:${{ secrets.PAT }}@github.com/${FORK_REPO}.git fork-repo
+          cd fork-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Preserve workflows
+      - name: Fetch and merge upstream
         run: |
-          git checkout ${{ env.TARGET_BRANCH }} -- .github/workflows || true
+          cd fork-repo
+          git remote add upstream https://github.com/${SOURCE_REPO}.git
+          git fetch upstream $BRANCH
+          git checkout -B sync-fork origin/$BRANCH
 
-      - name: Rebase from upstream
-        run: |
-          git checkout -B sync-fork
-          git rebase upstream/${{ env.SOURCE_BRANCH }}
+          # Save fork workflows
+          git checkout origin/$BRANCH -- .github/workflows || true
 
-          # Restore workflows
-          git checkout HEAD -- .github/workflows || true
+          # Reset to upstream/master
+          git reset --hard upstream/$BRANCH
 
-      - name: Commit changes if any
-        run: |
+          # Restore fork workflows
+          git checkout sync-fork -- .github/workflows || true
+
           git add .
           if git diff --cached --quiet; then
-            echo "No changes to commit"
+            echo "No changes to sync."
             exit 0
           fi
-          git commit -m "🔄 Sync from upstream ${{ env.SOURCE_REPO }}"
 
-      # ✅ Must run inside a checked-out Git repo
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.PAT }}
-          commit-message: "🔄 Sync from upstream"
-          title: "🔄 Sync from upstream"
-          body: Auto-generated PR to sync with upstream `${{ env.SOURCE_REPO }}`
-          base: ${{ env.TARGET_BRANCH }}
-          branch: sync-fork
+          git commit -m "🔄 Sync from upstream"
+          git push -f origin sync-fork
+
+      - name: Create PR using GitHub CLI
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+        run: |
+          cd fork-repo
+          gh pr create \
+            --title "🔄 Sync from upstream" \
+            --body "Auto-generated PR to sync with upstream \`${SOURCE_REPO}\`" \
+            --base $BRANCH \
+            --head sync-fork
