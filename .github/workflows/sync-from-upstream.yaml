@@ -39,14 +39,6 @@ jobs:
         fi
 
 
-    - name: Revert upstream .github/workflows changes from fork's master
-      run: |
-        git fetch origin master
-        git checkout feat-sync
-        git checkout origin/master -- .github/workflows
-        git add .github/workflows
-        git commit -m "Preserve fork's .github/workflows/" || echo "No changes to workflows"
-
     - name: Create PR to merge upstream into fork
       env:
         GH_TOKEN: ${{ secrets.PAT }}
