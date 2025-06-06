@@ -32,19 +32,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          token: ${{ env.WORKFLOW_TOKEN }}
-
-      - name: Prepare "fix-upstream-sync" branch
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin
-          git checkout -B fix-upstream-sync origin/master || git checkout -B fix-upstream-sync
-          git push origin fix-upstream-sync
-      
       - name: GitHub Sync to Upstream Repository
         uses: dabreadman/sync-upstream-repo@v1.3.0
         with: 
