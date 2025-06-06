@@ -2,7 +2,7 @@ name: Sync Forked Repo
 
 on:
   repository_dispatch:
-    types: [sync-fork]
+    types: [sync-from-upstream]
 
 jobs:
   sync:
