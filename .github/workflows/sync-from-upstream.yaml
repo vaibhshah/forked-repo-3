@@ -43,7 +43,7 @@ jobs:
 
           cp -r .github/workflows ../preserve-workflows
 
-          git merge upstream/$SOURCE_BRANCH --no-edit || true
+          git merge upstream/$SOURCE_BRANCH --allow-unrelated-histories --no-edit || true
 
           rm -rf .github/workflows
           mv ../preserve-workflows .github/workflows
