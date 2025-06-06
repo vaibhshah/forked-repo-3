@@ -76,20 +76,6 @@ jobs:
           body: |
             This PR brings your fork in sync with `${{ env.UPSTREAM_REPO }}` `master`.
             Your `.github/workflows/` folder is preserved from the fork.
-          head: $SYNC_BRANCH
-          base: ${{ env.FORK_BRANCH }}
-          draft: false
-
-      - name: Create PR
-        if: env.changes == 'true'
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.PAT }}
-          commit-message: "🔄 Sync fork with upstream, preserving fork workflows 🤖"
-          title: "Sync fork with upstream"
-          body: |
-            This PR brings your fork in sync with `${{ env.UPSTREAM_REPO }}` `master`.
-            Your `.github/workflows/` folder is preserved from the fork.
           branch: ${{ env.SYNC_BRANCH }}
           base: ${{ env.FORK_BRANCH }}
           draft: false
