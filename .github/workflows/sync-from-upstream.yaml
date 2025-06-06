@@ -24,4 +24,12 @@ jobs:
         sync_tags: ""
         github_token: ${{ secrets.PAT }}
 
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.PAT }}
+        title: "Sync fork with upstream"
+        body: "This PR syncs upstream changes from `master` to `feat-sync`."
+        base: master
+        branch: feat-sync
 
