@@ -6,13 +6,18 @@ on:
       - master
 
 jobs:
-  dispatch:
+  trigger-fork:
     runs-on: ubuntu-latest
     steps:
-      - name: Send repository_dispatch to forked repo
+      - name: Trigger repository_dispatch on fork
         uses: peter-evans/repository-dispatch@v3
         with:
-          token: ${{ secrets.PAT }}
-          repository: vaibhshah/forked-repo-3
+          token: ${{ secrets.PAT }}                  # PAT with access to fork repo
+          repository: vaibhshah/forked-repo-3            # fork repo full name
           event-type: sync-from-upstream
-          client-payload: '{"source_repo":"vaibhhvv/original-repo-3","source_branch":"master"}'
+          client-payload: |
+            {
+              "source_repo": "vaibhhvv/original-repo-3",
+              "source_branch": "master",
+              "target_branch": "master"
+            }
