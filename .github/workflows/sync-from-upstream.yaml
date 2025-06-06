@@ -27,46 +27,36 @@ jobs:
       - name: Install GitHub CLI
         run: sudo apt-get install -y gh
 
-      - name: Authenticate GitHub CLI
-        run: echo "${{ secrets.PAT }}" | gh auth login --with-token
-
       - name: Sync with upstream and create PR
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
         run: |
           set -e
 
-          # Git identity
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Add upstream and fetch
           git remote add upstream https://github.com/${UPSTREAM_REPO}.git
           git fetch upstream
 
-          # Create sync branch
           git checkout -B $SYNC_BRANCH origin/$FORK_BRANCH
 
-          # Save fork workflows
           cp -r .github/workflows ../preserve-workflows
 
-          # Merge upstream
           git merge upstream/$SOURCE_BRANCH --no-edit || true
 
-          # Restore workflows from fork
           rm -rf .github/workflows
           mv ../preserve-workflows .github/workflows
 
-          # Stage and check for changes
           git add .
           if git diff --cached --quiet; then
             echo "✅ No changes to commit"
             exit 0
           fi
 
-          # Commit and push sync branch
           git commit -m "🔄 Sync fork with upstream, preserving workflows 🤖"
           git push -u origin $SYNC_BRANCH --force
 
-          # Create PR
           gh pr create \
             --title "Sync fork with upstream" \
             --body "This PR syncs your fork with upstream \`$SOURCE_BRANCH\` and preserves local workflows." \
