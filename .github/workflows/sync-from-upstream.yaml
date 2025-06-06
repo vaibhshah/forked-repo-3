@@ -74,4 +74,4 @@ jobs:
             preserving your local `.github/workflows/` directory.
           branch: ${{ env.SYNC_BRANCH }}
           base: ${{ env.FORK_BRANCH }}
-          delete-branch: true
+          delete-branch: false
