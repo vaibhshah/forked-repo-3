@@ -23,3 +23,16 @@ jobs:
         destination_branch: "feat-sync"
         sync_tags: ""
         github_token: ${{ secrets.PAT }}
+
+    - name: Create pull request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.PAT }}
+        commit-message: "Sync upstream changes 🤖"
+        title: "Sync upstream: ${{ github.event.inputs.head_branch }} → ${{ github.event.inputs.base_branch }}"
+        body: |
+          This PR syncs `${{ github.event.inputs.head_branch }}` into `${{ github.event.inputs.base_branch }}`.
+          Automatically generated.
+        base: "master"
+        head: "feat-sync"
+        draft: false
