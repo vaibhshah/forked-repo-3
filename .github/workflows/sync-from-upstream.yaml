@@ -1,4 +1,4 @@
-name: Sync from upstream
+name: Sync with upstream via CLI
 
 on:
   repository_dispatch:
@@ -18,60 +18,57 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout fork branch
+      - name: Checkout fork default branch
         uses: actions/checkout@v3
         with:
           ref: ${{ env.FORK_BRANCH }}
           token: ${{ secrets.PAT }}
 
-      - name: Configure Git
+      - name: Install GitHub CLI
+        run: sudo apt-get install -y gh
+
+      - name: Authenticate GitHub CLI
+        run: echo "${{ secrets.PAT }}" | gh auth login --with-token
+
+      - name: Sync with upstream and create PR
         run: |
+          set -e
+
+          # Git identity
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Add upstream and fetch
-        run: |
-          git remote add upstream https://github.com/${{ env.UPSTREAM_REPO }}.git
+          # Add upstream and fetch
+          git remote add upstream https://github.com/${UPSTREAM_REPO}.git
           git fetch upstream
 
-      - name: Create sync branch from fork
-        run: |
-          git checkout -B $SYNC_BRANCH origin/${{ env.FORK_BRANCH }}
+          # Create sync branch
+          git checkout -B $SYNC_BRANCH origin/$FORK_BRANCH
 
-      - name: Save fork workflows and merge upstream
-        run: |
+          # Save fork workflows
           cp -r .github/workflows ../preserve-workflows
 
-          git merge upstream/${{ env.SOURCE_BRANCH }} --no-edit || true
+          # Merge upstream
+          git merge upstream/$SOURCE_BRANCH --no-edit || true
 
+          # Restore workflows from fork
           rm -rf .github/workflows
           mv ../preserve-workflows .github/workflows
 
+          # Stage and check for changes
           git add .
-
           if git diff --cached --quiet; then
-            echo "No changes to commit"
-            echo "changes=false" >> $GITHUB_ENV
-          else
-            echo "changes=true" >> $GITHUB_ENV
+            echo "✅ No changes to commit"
+            exit 0
           fi
 
-      - name: Commit and push sync branch
-        if: env.changes == 'true'
-        run: |
+          # Commit and push sync branch
           git commit -m "🔄 Sync fork with upstream, preserving workflows 🤖"
           git push -u origin $SYNC_BRANCH --force
 
-      - name: Create Pull Request
-        if: env.changes == 'true'
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.PAT }}
-          commit-message: "🔄 Sync fork with upstream, preserving workflows 🤖"
-          title: "Sync fork with upstream"
-          body: |
-            This PR syncs your fork with upstream `${{ env.UPSTREAM_REPO }}` (`${{ env.SOURCE_BRANCH }}`),
-            preserving your local `.github/workflows/` directory.
-          branch: ${{ env.SYNC_BRANCH }}
-          base: ${{ env.FORK_BRANCH }}
-          delete-branch: false
+          # Create PR
+          gh pr create \
+            --title "Sync fork with upstream" \
+            --body "This PR syncs your fork with upstream \`$SOURCE_BRANCH\` and preserves local workflows." \
+            --base "$FORK_BRANCH" \
+            --head "$SYNC_BRANCH"
