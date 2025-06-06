@@ -39,7 +39,7 @@ jobs:
           mv .github/workflows ../safe-workflows/
 
           # Merge upstream/master with ours strategy (keeps current files as-is, but records merge)
-          git merge -s ours upstream/master -m "Preserve fork workflows folder"
+          git merge -s ours upstream/master -m "Preserve fork workflows folder" --allow-unrelated-histories
 
           # Restore workflows folder
           mv ../safe-workflows/workflows .github/
@@ -52,6 +52,7 @@ jobs:
 
           # Stage all changes
           git add .
+
 
       - name: Check if there are changes to commit
         id: git_diff
