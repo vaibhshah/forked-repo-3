@@ -22,6 +22,12 @@ jobs:
         sync_tags: ""
         github_token: ${{ secrets.PAT }}
 
+    - name: Revert upstream .github/workflows changes
+      run: |
+        git fetch origin master
+        git checkout origin/master -- .github/workflows
+        git restore --staged .github/workflows || true
+
     - name: Create PR to merge upstream into fork
       env:
         GH_TOKEN: ${{ secrets.PAT }}
