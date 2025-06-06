@@ -4,71 +4,81 @@ on:
   repository_dispatch:
     types: [sync-from-upstream]
 
+permissions:
+  contents: write
+
+env:
+  UPSTREAM_REPO: vaibhhvv/original-repo-3
+  FORK_BRANCH: master
+  SYNC_BRANCH: sync-upstream-branch
+
 jobs:
   sync:
     runs-on: ubuntu-latest
 
-    env:
-      SOURCE_REPO: vaibhhvv/original-repo-3
-      SOURCE_BRANCH: master
-      TARGET_BRANCH: master
-
     steps:
-      - name: Checkout forked repo
-        uses: actions/checkout@v4
+      - name: Checkout forked repo's master branch
+        uses: actions/checkout@v3
         with:
-          fetch-depth: 0
-          ref: ${{ env.TARGET_BRANCH }}
+          ref: ${{ env.FORK_BRANCH }}
+          token: ${{ secrets.PAT }}
 
-      - name: Set up Git identity
+      - name: Add upstream remote
+        run: git remote add upstream https://github.com/${{ env.UPSTREAM_REPO }}.git
+
+      - name: Fetch upstream master
+        run: git fetch upstream master
+
+      - name: Create sync branch from fork master
+        run: git checkout -b $SYNC_BRANCH
+
+      - name: Merge upstream master into sync branch, preserving fork workflows folder
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Save workflows folder
+          mkdir -p ../safe-workflows
+          mv .github/workflows ../safe-workflows/
 
-      - name: Add upstream and fetch
+          # Merge upstream/master with ours strategy (keeps current files as-is, but records merge)
+          git merge -s ours upstream/master -m "Preserve fork workflows folder"
+
+          # Restore workflows folder
+          mv ../safe-workflows/workflows .github/
+
+          # Checkout upstream files (except workflows folder)
+          git checkout upstream/master -- .
+
+          # Restore workflows folder to original fork version (HEAD)
+          git checkout HEAD -- .github/workflows
+
+          # Stage all changes
+          git add .
+
+      - name: Check if there are changes to commit
+        id: git_diff
         run: |
-          git remote add upstream https://github.com/${{ env.SOURCE_REPO }}.git
-          git fetch upstream ${{ env.SOURCE_BRANCH }}
-
-      - name: Save workflows from fork
-        run: |
-          mkdir -p ../preserved-workflows
-          cp -r .github/workflows ../preserved-workflows || true
-
-      - name: Sync from upstream (preserving workflows)
-        run: |
-          git checkout -B sync-fork origin/${{ env.TARGET_BRANCH }}
-          git merge --no-commit upstream/${{ env.SOURCE_BRANCH }} || true
-
-          # Remove any accidentally staged workflows
-          git reset .github/workflows || true
-          rm -rf .github/workflows
-
-          # Only add changes outside workflows
-          git add -A
-          git reset .github/workflows || true
-
-          # Skip if no other changes exist
           if git diff --cached --quiet; then
-            echo "No changes to sync"
-            exit 0
+            echo "changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "changes=true" >> $GITHUB_OUTPUT
           fi
 
-          git commit -m "🔄 Sync from upstream ${{ env.SOURCE_REPO }}"
-
-
-      - name: Push sync branch
+      - name: Commit and push changes if any
+        if: steps.git_diff.outputs.changes == 'true'
         run: |
-          git push -f origin sync-fork
+          git commit -m "🔄 Sync fork with upstream: ${{ env.UPSTREAM_REPO }}:${{ env.FORK_BRANCH }} 🤖"
+          git push -u origin $SYNC_BRANCH --force
 
-      - name: Create PR
-        uses: peter-evans/create-pull-request@v7
+      - name: Create or update Pull Request
+        if: steps.git_diff.outputs.changes == 'true'
+        uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.PAT }}
-          commit-message: "🔄 Sync from upstream"
-          title: "🔄 Sync from upstream"
+          commit-message: "🔄 Sync fork with upstream: ${{ env.UPSTREAM_REPO }}:${{ env.FORK_BRANCH }} 🤖"
+          title: "Sync fork with upstream"
           body: |
-            Auto-generated PR to sync with upstream `${{ env.SOURCE_REPO }}`
-          base: ${{ env.TARGET_BRANCH }}
-          branch: sync-fork
+            This PR syncs changes from the upstream repository `{{ env.UPSTREAM_REPO }}` branch `${{ env.FORK_BRANCH }}`.
 
+            The `.github/workflows` folder remains untouched.
+          head: $SYNC_BRANCH
+          base: ${{ env.FORK_BRANCH }}
+          draft: false
