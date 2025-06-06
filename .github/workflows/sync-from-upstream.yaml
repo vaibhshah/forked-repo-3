@@ -1,64 +1,43 @@
-name: Sync with upstream via CLI
-
-on:
-  repository_dispatch:
-    types: [sync-from-upstream]
-
-permissions:
-  contents: write
+name: Sync Upstream
 
 env:
-  UPSTREAM_REPO: vaibhhvv/original-repo-3
-  SOURCE_BRANCH: master
-  FORK_BRANCH: master
-  SYNC_BRANCH: sync-upstream-branch
+  # Required, URL to upstream (fork base)
+  UPSTREAM_URL: "https://github.com/vaibhhvv/original-repo-3.git"
+  # Required, token to authenticate bot, could use ${{ secrets.GITHUB_TOKEN }} 
+  # Over here, we use a PAT instead to authenticate workflow file changes.
+  WORKFLOW_TOKEN: ${{ secrets.PAT }}
+  # Optional, defaults to main
+  UPSTREAM_BRANCH: "master"
+  # Optional, defaults to UPSTREAM_BRANCH
+  DOWNSTREAM_BRANCH: "master"
+  # Optional fetch arguments
+  FETCH_ARGS: ""
+  # Optional merge arguments
+  MERGE_ARGS: ""
+  # Optional push arguments
+  PUSH_ARGS: ""
+  # Optional toggle to spawn time logs (keeps action active) 
+  SPAWN_LOGS: "true" # "true" or "false"
+
+# This runs every day on 1801 UTC
+on:
+  schedule:
+    - cron: '1 18 * * *'
+  # Allows manual workflow run (must in default branch to work)
+  workflow_dispatch:
 
 jobs:
-  sync:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout fork default branch
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ env.FORK_BRANCH }}
-          token: ${{ secrets.PAT }}
-
-      - name: Install GitHub CLI
-        run: sudo apt-get install -y gh
-
-      - name: Sync with upstream and create PR
-        env:
-          GH_TOKEN: ${{ secrets.PAT }}
-        run: |
-          set -e
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git remote add upstream https://github.com/${UPSTREAM_REPO}.git
-          git fetch upstream
-
-          git checkout -B $SYNC_BRANCH origin/$FORK_BRANCH
-
-          cp -r .github/workflows ../preserve-workflows
-
-          git merge upstream/$SOURCE_BRANCH --allow-unrelated-histories --no-edit || true
-
-          rm -rf .github/workflows
-          mv ../preserve-workflows .github/workflows
-
-          git add .
-          if git diff --cached --quiet; then
-            echo "✅ No changes to commit"
-            exit 0
-          fi
-
-          git commit -m "🔄 Sync fork with upstream, preserving workflows 🤖"
-          git push -u origin $SYNC_BRANCH --force
-
-          gh pr create \
-            --title "Sync fork with upstream" \
-            --body "This PR syncs your fork with upstream \`$SOURCE_BRANCH\` and preserves local workflows." \
-            --base "$FORK_BRANCH" \
-            --head "$SYNC_BRANCH"
+      - name: GitHub Sync to Upstream Repository
+        uses: dabreadman/sync-upstream-repo@v1.3.0
+        with: 
+          upstream_repo: ${{ env.UPSTREAM_URL }}
+          upstream_branch: ${{ env.UPSTREAM_BRANCH }}
+          downstream_branch: ${{ env.DOWNSTREAM_BRANCH }}
+          token: ${{ env.WORKFLOW_TOKEN }}
+          fetch_args: ${{ env.FETCH_ARGS }}
+          merge_args: ${{ env.MERGE_ARGS }}
+          push_args: ${{ env.PUSH_ARGS }}
+          spawn_logs: ${{ env.SPAWN_LOGS }}
