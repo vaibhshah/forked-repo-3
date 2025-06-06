@@ -24,15 +24,4 @@ jobs:
         sync_tags: ""
         github_token: ${{ secrets.PAT }}
 
-    - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v7
-      with:
-        token: ${{ secrets.PAT }}
-        commit-message: "Sync upstream changes 🤖"
-        title: "Sync upstream: ${{ github.event.inputs.head_branch }} → ${{ github.event.inputs.base_branch }}"
-        body: |
-          This PR syncs `${{ github.event.inputs.head_branch }}` into `${{ github.event.inputs.base_branch }}`.
-          Automatically generated.
-        base: "master"
-        branch: "feat-sync"
-        draft: true
+
