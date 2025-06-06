@@ -35,24 +35,27 @@ jobs:
           mkdir -p ../preserved-workflows
           cp -r .github/workflows ../preserved-workflows || true
 
-      - name: Create sync branch and merge upstream
+      - name: Sync from upstream (preserving workflows)
         run: |
           git checkout -B sync-fork origin/${{ env.TARGET_BRANCH }}
           git merge --no-commit upstream/${{ env.SOURCE_BRANCH }} || true
 
-          # Restore preserved workflows
+          # Remove any accidentally staged workflows
+          git reset .github/workflows || true
           rm -rf .github/workflows
-          cp -r ../preserved-workflows .github/workflows || true
 
-          git add .
+          # Only add changes outside workflows
+          git add -A
+          git reset .github/workflows || true
 
-          # Skip if nothing changed
+          # Skip if no other changes exist
           if git diff --cached --quiet; then
             echo "No changes to sync"
             exit 0
           fi
 
           git commit -m "🔄 Sync from upstream ${{ env.SOURCE_REPO }}"
+
 
       - name: Push sync branch
         run: |
