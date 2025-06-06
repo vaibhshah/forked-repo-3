@@ -12,6 +12,10 @@ jobs:
     - uses: actions/checkout@v4
       with:
         persist-credentials: false
+
+    - name: Configure Git attributes for merge strategy
+      run: |
+        git config --global merge.ours.driver true
         
     - name: repo-sync
       uses: repo-sync/github-sync@v2
