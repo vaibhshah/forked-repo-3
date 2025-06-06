@@ -4,3 +4,4 @@ Test 1
 test 2
 test: from original
 test: new wf in forked
+test
