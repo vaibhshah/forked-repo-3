@@ -22,32 +22,25 @@ jobs:
         sync_tags: ""
         github_token: ${{ secrets.PAT }}
 
-    - name: Restore fork’s workflows and commit
+    - name: Restore workflows and commit if needed
       run: |
         git config user.name "Sync Bot"
         git config user.email "bot@example.com"
-
-        # Fetch latest branches
-        git fetch origin master:origin-master
-        git fetch origin feat-sync
-
-        # Checkout or create feat-sync branch tracking origin/feat-sync
-        git checkout -B feat-sync origin/feat-sync
-
-        # Fully reset workflows directory
+    
+        git fetch origin feat-sync:feat-sync
+        git checkout feat-sync
+    
         rm -rf .github/workflows
-
-        # Restore workflows from fork’s trusted master branch
-        git checkout origin-master -- .github/workflows
-
-        # Check if workflows changed
+        git checkout origin/master -- .github/workflows
+    
         if git diff --quiet .github/workflows; then
-          echo "No workflow changes to commit."
+          echo "No workflow changes"
         else
           git add .github/workflows
-          git commit -m "🔧 Restore fork's workflows after upstream sync"
+          git commit -m "Restore workflows after upstream sync"
           git push origin feat-sync
         fi
+
 
     - name: Create PR to merge upstream into fork
       env:
