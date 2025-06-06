@@ -1,4 +1,4 @@
-name: Sync Forked Repo
+name: Trigger Fork Sync
 
 on:
   push:
@@ -6,69 +6,13 @@ on:
       - master
 
 jobs:
-  sync-fork:
+  dispatch:
     runs-on: ubuntu-latest
-
-    env:
-      ORIGINAL_REPO: vaibhhvv/original-repo-3
-      FORKED_REPO: vaibhshah/forked-repo-3
-      BRANCH: master
-
     steps:
-      - name: Checkout original repo
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ env.ORIGINAL_REPO }}
-          ref: ${{ env.BRANCH }}
-          path: upstream-repo
-          fetch-depth: 0
-
-      - name: Clone forked repo
-        run: |
-          git clone https://x-access-token:${{ secrets.PAT }}@github.com/${{ env.FORKED_REPO }} fork-repo
-          cd fork-repo
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-      - name: Sync fork with upstream (preserving workflows)
-        run: |
-          cd fork-repo
-
-          # Add upstream remote and fetch upstream branch
-          git remote add upstream https://github.com/${{ env.ORIGINAL_REPO }}.git
-          git fetch upstream ${{ env.BRANCH }}
-
-          # Checkout a fresh sync branch from fork branch
-          git checkout -B sync-fork origin/${{ env.BRANCH }}
-
-          # Save the current fork workflows folder (from fork branch)
-          git checkout origin/${{ env.BRANCH }} -- .github/workflows
-
-          # Reset hard to upstream branch
-          git reset --hard upstream/${{ env.BRANCH }}
-
-          # Restore the fork workflows saved before
-          git checkout sync-fork -- .github/workflows
-
-          # Stage all changes (except workflows are restored from fork)
-          git add .
-
-          # Check if there are changes to commit
-          if git diff --cached --quiet; then
-            echo "No changes to sync"
-            exit 0
-          fi
-
-          git commit -m "🔄 Sync fork with upstream (excluding workflows)"
-          git push -f origin sync-fork
-
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+      - name: Send repository_dispatch to forked repo
+        uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.PAT }}
-          commit-message: "🔄 Sync fork with upstream"
-          title: "🔄 Sync fork with upstream"
-          body: |
-            Auto-generated PR to sync with upstream `${{ env.ORIGINAL_REPO }}`
-          base: ${{ env.BRANCH }}
-          branch: sync-fork
+          repository: vaibhshah/forked-repo-3
+          event-type: sync-from-upstream
+          client-payload: '{"source_repo":"vaibhhvv/original-repo-3","source_branch":"master"}'
