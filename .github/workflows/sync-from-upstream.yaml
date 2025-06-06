@@ -79,4 +79,4 @@ jobs:
           branch: ${{ env.SYNC_BRANCH }}
           base: ${{ env.FORK_BRANCH }}
           draft: false
-          delete-branch: true
+          delete-branch: false
