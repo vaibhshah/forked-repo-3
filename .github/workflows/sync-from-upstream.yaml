@@ -9,7 +9,7 @@ on:
 
 jobs:
   repo-sync:
-    uses: your-org/common-actions/.github/workflows/repo-sync-v2.yaml@main
+    uses: vaibhshah/common-actions/.github/workflows/repo-sync-v2.yaml@main
     with:
       source_repo: vaibhhvv/original-repo-3         # Optional, override if needed
       source_branch: master
