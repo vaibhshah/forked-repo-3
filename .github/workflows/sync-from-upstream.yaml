@@ -1,4 +1,6 @@
-# File: .github/workflows/repo-sync.yml
+# File: .github/workflows/sync-from-upstream.yaml
+
+name: Sync from Upstream
 
 on:
   workflow_dispatch:
@@ -7,38 +9,11 @@ on:
 
 jobs:
   repo-sync:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        persist-credentials: false
-        
-    - name: repo-sync
-      uses: repo-sync/github-sync@v2
-      with:
-        source_repo: "https://github.com/vaibhhvv/original-repo-3.git"
-        source_branch: "master"
-        destination_branch: "feat-sync"
-        sync_tags: ""
-        github_token: ${{ secrets.PAT }}
-
-
-    - name: Create PR to merge upstream into fork
-      env:
-        GH_TOKEN: ${{ secrets.PAT }}
-      run: |
-        # Ensure branch exists
-        git fetch origin feat-sync
-        git checkout feat-sync
-    
-        # Check if PR already exists
-        if gh pr list --head feat-sync --base master --json number --jq '.[0].number' | grep -q '[0-9]'; then
-          echo "PR already exists, skipping."
-        else
-          gh pr create \
-            --title "🔄 Sync fork with upstream" \
-            --body "This PR syncs the \`feat-sync\` branch with upstream \`master\`, preserving local workflows." \
-            --base master \
-            --head feat-sync
-        fi
-
+    uses: your-org/common-actions/.github/workflows/repo-sync-v2.yaml@main
+    with:
+      source_repo: vaibhhvv/original-repo-3         # Optional, override if needed
+      source_branch: master
+      destination_branch: feat-sync                 # Or 'master', depending on your fork structure
+      base_branch: master                           # The base for PR
+    secrets:
+      PAT: ${{ secrets.PAT }}
