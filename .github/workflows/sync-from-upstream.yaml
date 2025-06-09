@@ -4,6 +4,10 @@ name: Sync from Upstream
 
 on:
   workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to sync (e.g., master or develop)'
+        required: true
   repository_dispatch:
     types: [sync-from-upstream]
 
@@ -12,8 +16,9 @@ jobs:
     uses: vaibhshah/common-actions/.github/workflows/repo-sync-v2.yaml@main
     with:
       source_repo: vaibhhvv/original-repo-3       # original repo name
-      source_branch: ${{ github.event.client_payload.branch }}
-      destination_branch: feat-sync-${{ github.event.client_payload.branch }}
-      base_branch: ${{ github.event.client_payload.branch }}
+      source_branch: ${{ github.event.client_payload.branch || inputs.branch }}
+      fork_repo: vaibhshah/forked-repo-3
+      destination_branch: feat-sync-${{ github.event.client_payload.branch || inputs.branch }}
+      base_branch: ${{ github.event.client_payload.branch || inputs.branch }}
     secrets:
       PAT: ${{ secrets.PAT }}
