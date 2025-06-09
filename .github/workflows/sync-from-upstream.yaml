@@ -11,9 +11,9 @@ jobs:
   repo-sync:
     uses: vaibhshah/common-actions/.github/workflows/repo-sync-v2.yaml@main
     with:
-      source_repo: vaibhhvv/original-repo-3         # Optional, override if needed
-      source_branch: master
-      destination_branch: feat-sync                 # Or 'master', depending on your fork structure
-      base_branch: master                           # The base for PR
+      source_repo: vaibhhvv/original-repo-3       # original repo name
+      source_branch: ${{ github.event.client_payload.branch }}
+      destination_branch: feat-sync-${{ github.event.client_payload.branch }}
+      base_branch: ${{ github.event.client_payload.branch }}
     secrets:
       PAT: ${{ secrets.PAT }}
