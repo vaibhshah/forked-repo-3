@@ -13,6 +13,7 @@ jobs:
     with:
       source_repo: vaibhhvv/original-repo-3       # original repo name
       source_branch: ${{ github.event.client_payload.branch }}
+      fork_repo: vaibhshah/forked-repo-3
       destination_branch: feat-sync-${{ github.event.client_payload.branch }}
       base_branch: ${{ github.event.client_payload.branch }}
     secrets:
