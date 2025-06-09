@@ -1,23 +1,21 @@
-# # original-repo/.github/workflows/on-push-sync.yml
 
-# name: Trigger Fork Sync via Common Actions
+# # original-repo/.github/workflows/fork-sync.yaml
+
+
+# # name: Trigger Fork Sync via Common Actions
+
 
 # on:
 #   push:
 #     branches:
-#       - master
-#     # Ignore changes ONLY inside the .github/workflows folder
-#     paths-ignore:
-#       - '.github/workflows/**'
+#       - master  # Or 'main' if your default branch is main
 
 # jobs:
-#   call-common-sync:
+#   trigger-fork:
 #     uses: vaibhhvv/common-actions/.github/workflows/trigger-fork-sync-v2.yaml@main
 #     with:
-#       source_repo: vaibhhvv/original-repo-3
-#       source_branch: master
-#       fork_repo: vaibhshah/forked-repo-3
-#       target_branch: master
+#       fork_repo: vaibhshah/forked-repo-3 
 #     secrets:
 #       PAT: ${{ secrets.PAT }}
+
 
