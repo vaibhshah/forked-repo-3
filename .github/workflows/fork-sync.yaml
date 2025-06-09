@@ -6,10 +6,13 @@ on:
   push:
     branches:
       - master
+    # Ignore changes ONLY inside the .github/workflows folder
+    paths-ignore:
+      - '.github/workflows/**'
 
 jobs:
   call-common-sync:
-    uses: vaibhhvv/common-actions/.github/workflows/trigger-fork-sync-v2.yml@main
+    uses: vaibhhvv/common-actions/.github/workflows/trigger-fork-sync-v2.yaml@main
     with:
       source_repo: vaibhhvv/original-repo-3
       source_branch: master
