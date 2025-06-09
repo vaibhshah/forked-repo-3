@@ -1,4 +1,6 @@
-name: Trigger Fork Sync
+# original-repo/.github/workflows/on-push-sync.yml
+
+name: Trigger Fork Sync via Common Actions
 
 on:
   push:
@@ -6,18 +8,12 @@ on:
       - master
 
 jobs:
-  trigger-fork:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger repository_dispatch on fork
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.PAT }}                  # PAT with access to fork repo
-          repository: vaibhshah/forked-repo-3            # fork repo full name
-          event-type: sync-from-upstream
-          client-payload: |
-            {
-              "source_repo": "vaibhhvv/original-repo-3",
-              "source_branch": "master",
-              "target_branch": "master"
-            }
+  call-common-sync:
+    uses: vaibhhvv/common-actions/.github/workflows/trigger-fork-sync-v2.yml@main
+    with:
+      source_repo: vaibhhvv/original-repo-3
+      source_branch: master
+      fork_repo: vaibhshah/forked-repo-3
+      target_branch: master
+    secrets:
+      PAT: ${{ secrets.PAT }}
