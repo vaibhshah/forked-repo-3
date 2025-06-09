@@ -3,3 +3,4 @@ some commit
 neww commit
 commit on master 
 commit on dev
+develop commit
