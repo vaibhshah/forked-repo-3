@@ -1,17 +1,21 @@
-# original-repo/.github/workflows/fork-sync.yaml
 
-name: Trigger Fork Sync via Common Actions
+# # original-repo/.github/workflows/fork-sync.yaml
 
-on:
-  push:
-    branches:
-      - master  # Or 'main' if your default branch is main
 
-jobs:
-  trigger-fork:
-    uses: vaibhhvv/common-actions/.github/workflows/trigger-fork-sync-v2.yaml@main
-    with:
-      fork_repo: vaibhshah/forked-repo-3 
-    secrets:
-      PAT: ${{ secrets.PAT }}
+# # name: Trigger Fork Sync via Common Actions
+
+
+# on:
+#   push:
+#     branches:
+#       - master  # Or 'main' if your default branch is main
+
+# jobs:
+#   trigger-fork:
+#     uses: vaibhhvv/common-actions/.github/workflows/trigger-fork-sync-v2.yaml@main
+#     with:
+#       fork_repo: vaibhshah/forked-repo-3 
+#     secrets:
+#       PAT: ${{ secrets.PAT }}
+
 
