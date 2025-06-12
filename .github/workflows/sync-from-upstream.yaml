@@ -11,41 +11,8 @@ on:
   repository_dispatch:
     types: [sync-from-upstream]
 
-env:
-  ALLOWED_BRANCHES: 'master,develop'  # ✅ Define allowed branches as a comma-separated list
-
 jobs:
-  validate-branch-if-manual:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
-    runs-on: ubuntu-latest
-    outputs:
-      allowed: ${{ steps.check.outputs.allowed }}
-    steps:
-      - name: Validate input branch
-        id: check
-        run: |
-          BRANCH="${{ inputs.branch }}"
-          ALLOWED="${{ env.ALLOWED_BRANCHES }}"
-          echo "🔍 Validating input branch: $BRANCH"
-          
-          IFS=',' read -ra ALLOWED_ARRAY <<< "$ALLOWED"
-          for allowed in "${ALLOWED_ARRAY[@]}"; do
-            if [[ "$BRANCH" == "$allowed" ]]; then
-              echo "✅ Branch is allowed."
-              echo "allowed=true" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-          done
-
-          echo "❌ Branch '$BRANCH' is not allowed for manual sync."
-          echo "allowed=false" >> $GITHUB_OUTPUT
-          exit 0
-
   repo-sync:
-    if: |
-      github.event_name == 'repository_dispatch' ||
-      (github.event_name == 'workflow_dispatch' && needs.validate-branch-if-manual.outputs.allowed == 'true')
-    needs: ${{ github.event_name == 'workflow_dispatch' && 'validate-branch-if-manual' }}
     uses: vaibhshah/common-actions/.github/workflows/repo-sync-v2.yaml@main
     with:
       source_repo: vaibhhvv/original-repo-3       # original repo name
