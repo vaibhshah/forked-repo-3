@@ -25,21 +25,24 @@ jobs:
         id: check
         run: |
           BRANCH="${{ inputs.branch }}"
-          ALLOWED="${{ env.ALLOWED_BRANCHES }}"
-          echo "Validating input branch: $BRANCH"
-          
-          IFS=',' read -ra ALLOWED_ARRAY <<< "$ALLOWED"
+          echo "🔍 Validating input branch: $BRANCH"
+
+          IFS=',' read -ra ALLOWED_ARRAY <<< "${{ env.ALLOWED_BRANCHES }}"
           for allowed in "${ALLOWED_ARRAY[@]}"; do
             if [[ "$BRANCH" == "$allowed" ]]; then
-              echo "✅ Branch is allowed."
-              echo "allowed=true" >> $GITHUB_OUTPUT
+              msg="✅ Branch '$BRANCH' is allowed for manual sync."
+              echo "$msg"
+              echo "allowed=true" >> "$GITHUB_OUTPUT"
+              echo "$msg"  # Repeat same message for clarity after Set output
               exit 0
             fi
           done
 
-          echo "❌ Branch '$BRANCH' is not allowed for manual sync."
-          echo "allowed=false" >> $GITHUB_OUTPUT
-          exit 0
+          msg="❌ Branch '$BRANCH' is not allowed for manual sync."
+          echo "$msg"
+          echo "allowed=false" >> "$GITHUB_OUTPUT"
+          echo "$msg"  # Repeat same message again after Set output
+
 
           
   repo-sync:
