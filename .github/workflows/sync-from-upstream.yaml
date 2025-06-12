@@ -45,7 +45,7 @@ jobs:
     if: |
       github.event_name == 'repository_dispatch' ||
       (github.event_name == 'workflow_dispatch' && needs.validate-branch-if-manual.outputs.allowed == 'true')
-    needs: [validate-branch-if-manual]
+    needs: ${{ github.event_name == 'workflow_dispatch' && 'validate-branch-if-manual' }}
     uses: vaibhshah/common-actions/.github/workflows/repo-sync-v2.yaml@main
     with:
       source_repo: vaibhhvv/original-repo-3       # original repo name
